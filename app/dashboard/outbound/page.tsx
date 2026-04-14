@@ -1,38 +1,73 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-
 export default function OutboundPage() {
   const router = useRouter();
 
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
   const [form, setForm] = useState({
-    batch: "",
-    weight: "",
-    pieces: "",
+    productId: "",
+    quantity: "",
     client: "",
-    price: "",
     destination: "",
-    notes: "",
   });
+
+  // 🔥 LOAD PRODUCTS
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => setProducts(data));
+  }, []);
 
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
-    console.log(form);
+  // 🔥 SUBMIT
+  const handleSubmit = async () => {
+    setLoading(true);
+    setMessage("");
+
+    const res = await fetch("/api/outbound", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        productId: Number(form.productId),
+        quantity: Number(form.quantity),
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setMessage("❌ " + data.error);
+    } else {
+      setMessage("✅ Dispatch réussi");
+
+      setForm({
+        productId: "",
+        quantity: "",
+        client: "",
+        destination: "",
+      });
+    }
+
+    setLoading(false);
   };
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
 
-      {/* Title */}
       <h1 className="text-2xl text-center font-bold">Product Dispatch</h1>
 
       {/* Tabs */}
@@ -49,78 +84,73 @@ export default function OutboundPage() {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Product */}
+      <div>
+        <Label>Product</Label>
+        <select
+          name="productId"
+          value={form.productId}
+          onChange={handleChange}
+          className="w-full border rounded-md p-2"
+        >
+          <option value="">Select product</option>
 
-        {/* Batch */}
-        <div>
-          <Label>Lot / Batch</Label>
-          <Input
-            name="batch"
-            placeholder="Enter batch ID"
-            onChange={handleChange}
-          />
-        </div>
+          {products.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} (Stock: {p.stock})
+            </option>
+          ))}
+        </select>
+      </div>
 
-        {/* Weight + Pieces */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Weight (lb)</Label>
-            <Input
-              type="number"
-              name="weight"
-              placeholder="0"
-              onChange={handleChange}
-            />
-          </div>
+      {/* Quantity */}
+      <div>
+        <Label>Quantity</Label>
+        <Input
+          type="number"
+          name="quantity"
+          placeholder="0"
+          value={form.quantity}
+          onChange={handleChange}
+        />
+      </div>
 
-          <div>
-            <Label>Pieces</Label>
-            <Input
-              type="number"
-              name="pieces"
-              placeholder="0"
-              onChange={handleChange}
-            />
-          </div>
-        </div>
+      {/* Client */}
+      <div>
+        <Label>Client</Label>
+        <Input
+          name="client"
+          placeholder="Client name"
+          value={form.client}
+          onChange={handleChange}
+        />
+      </div>
 
-        {/* Client */}
-        <div>
-          <Label>Client Name</Label>
-          <Input
-            name="client"
-            placeholder="Enter client name"
-            onChange={handleChange}
-          />
-        </div>
+      {/* Destination */}
+      <div>
+        <Label>Destination</Label>
+        <Input
+          name="destination"
+          placeholder="City"
+          value={form.destination}
+          onChange={handleChange}
+        />
+      </div>
 
-        {/* Destination */}
-        <div>
-          <Label>Destination</Label>
-          <Input
-            name="destination"
-            placeholder="City / Warehouse"
-            onChange={handleChange}
-          />
-        </div>
+      {/* MESSAGE */}
+      {message && (
+        <p className="text-center text-sm text-blue-600">{message}</p>
+      )}
 
-        {/* Price */}
-        <div>
-          <Label>Sales Price ($)</Label>
-          <Input
-            type="number"
-            name="price"
-            placeholder="0"
-            onChange={handleChange}
-          />
-        </div>
+      {/* BUTTON */}
+      <Button
+        onClick={handleSubmit}
+        disabled={loading}
+        className="w-full bg-black text-white"
+      >
+        {loading ? "Loading..." : "Confirm Dispatch"}
+      </Button>
 
-        {/* Submit */}
-        <Button className="w-full bg-black hover:bg-green-700 text-white">
-          Confirm Dispatch
-        </Button>
-
-      </form>
     </div>
   );
 }

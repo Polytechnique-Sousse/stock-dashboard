@@ -1,30 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function PUT(
-  req: NextRequest,
+export async function GET(
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { name, category, price, stock, threshold } = await req.json();
-    const product = await prisma.product.update({
-      where: { id: Number(params.id) },
-      data: { name, category, price: Number(price), stock: Number(stock), threshold: Number(threshold) },
+    const productId = Number(params.id);
+
+    console.log("PARAMS =", params.id);
+
+    if (isNaN(productId)) {
+      return NextResponse.json(
+        { error: "ID invalid", raw: params.id },
+        { status: 400 }
+      );
+    }
+
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
     });
+
+    if (!product) {
+      return NextResponse.json(
+        { error: "Product not found" },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(product);
-  } catch {
-    return NextResponse.json({ error: "Product not found" }, { status: 404 });
+
+  } catch (error) {
+    console.error(error);
+
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
   }
 }
+export async function PUT(req: Request, { params }: any) {
+  const data = await req.json();
 
+  const product = await prisma.product.update({
+    where: { id: Number(params.id) },
+    data,
+  });
+
+  return NextResponse.json(product);
+}
 export async function DELETE(
   _: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    await prisma.product.delete({ where: { id: Number(params.id) } });
-    return NextResponse.json({ message: "Product deleted" });
+    await prisma.supplier.delete({ where: { id: Number(params.id) } });
+    return NextResponse.json({ message: "Supplier deleted" });
   } catch {
-    return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    return NextResponse.json({ error: "Supplier not found" }, { status: 404 });
   }
 }

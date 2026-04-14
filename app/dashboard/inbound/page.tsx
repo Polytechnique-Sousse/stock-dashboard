@@ -1,17 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-
 export default function InboundPage() {
   const router = useRouter();
 
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
   const [form, setForm] = useState({
-    productName: "",
+    productId: "",
     provider: "",
     grade: "",
     brand: "",
@@ -24,8 +27,61 @@ export default function InboundPage() {
     notes: "",
   });
 
+  // 🔥 LOAD PRODUCTS
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => setProducts(data));
+  }, []);
+
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // 🔥 SUBMIT INBOUND
+  const handleSubmit = async () => {
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const res = await fetch("/api/inbound", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productId: Number(form.productId),
+          quantity: Number(form.qty),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessage(data.error || "Error");
+      } else {
+        setMessage("✅ Product added successfully");
+
+        // reset form
+        setForm({
+          productId: "",
+          provider: "",
+          grade: "",
+          brand: "",
+          origin: "",
+          condition: "",
+          productionDate: "",
+          expirationDate: "",
+          qty: "",
+          price: "",
+          notes: "",
+        });
+      }
+    } catch (error) {
+      setMessage("Server error");
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -48,32 +104,24 @@ export default function InboundPage() {
         </button>
       </div>
 
-      {/* Product Name */}
+      {/* Product Select */}
       <div>
         <Label>Product Name</Label>
         <select
-          name="productName"
+          name="productId"
+          value={form.productId}
           onChange={handleChange}
           className="w-full border rounded-md p-2"
         >
-          <option>ChickenWings8456</option>
-          <option>Poulet entier</option>
-          <option>Bœuf haché</option>
-          <option>Côtelettes d'agneau</option>
-          <option>Escalope de dinde</option>
-          <option>Filet de merlan</option>
-          <option>Merguez</option>
-          <option>Cuisse de poulet</option>
-        </select>
-        <p className="text-sm text-gray-500 mt-1">
-          Can't find the product? Use the emergency button below.
-        </p>
-      </div>
+          <option value="">Select product</option>
 
-      {/* Emergency Button */}
-      <Button variant="outline" className="w-full border-red-500 text-red-500">
-        ⚠ Create Emergency Product
-      </Button>
+          {products.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} (Stock: {p.stock})
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* Provider */}
       <div>
@@ -81,6 +129,7 @@ export default function InboundPage() {
         <Input
           name="provider"
           placeholder="Provider name"
+          value={form.provider}
           onChange={handleChange}
         />
       </div>
@@ -90,7 +139,8 @@ export default function InboundPage() {
         <Label>Grade</Label>
         <Input
           name="grade"
-          placeholder="e.g. Premium, Standard"
+          placeholder="e.g. Premium"
+          value={form.grade}
           onChange={handleChange}
         />
       </div>
@@ -100,7 +150,8 @@ export default function InboundPage() {
         <Label>Brand</Label>
         <Input
           name="brand"
-          placeholder="Brand name"
+          placeholder="Brand"
+          value={form.brand}
           onChange={handleChange}
         />
       </div>
@@ -110,7 +161,8 @@ export default function InboundPage() {
         <Label>Origin</Label>
         <Input
           name="origin"
-          placeholder="Country/Region of origin"
+          placeholder="Country"
+          value={form.origin}
           onChange={handleChange}
         />
       </div>
@@ -120,7 +172,8 @@ export default function InboundPage() {
         <Label>Condition</Label>
         <Input
           name="condition"
-          placeholder="Product condition"
+          placeholder="Condition"
+          value={form.condition}
           onChange={handleChange}
         />
       </div>
@@ -132,6 +185,7 @@ export default function InboundPage() {
           <Input
             type="date"
             name="productionDate"
+            value={form.productionDate}
             onChange={handleChange}
           />
         </div>
@@ -141,6 +195,7 @@ export default function InboundPage() {
           <Input
             type="date"
             name="expirationDate"
+            value={form.expirationDate}
             onChange={handleChange}
           />
         </div>
@@ -148,53 +203,51 @@ export default function InboundPage() {
 
       {/* Quantity */}
       <div>
-        <Label>Qty Received (lb)</Label>
+        <Label>Qty Received</Label>
         <Input
           type="number"
           name="qty"
           placeholder="0"
+          value={form.qty}
           onChange={handleChange}
         />
       </div>
 
       {/* Price */}
       <div>
-        <Label>Price ($)</Label>
+        <Label>Price</Label>
         <Input
           type="number"
           name="price"
           placeholder="0"
+          value={form.price}
           onChange={handleChange}
         />
       </div>
 
-      {/* Upload Invoice */}
+      {/* Notes */}
       <div>
-        <Label>Invoice (optional)</Label>
-        <div className="border rounded-md p-3 flex justify-center cursor-pointer">
-          Upload Invoice
-        </div>
+        <Label>Notes</Label>
+        <Input
+          name="notes"
+          placeholder="Optional notes"
+          value={form.notes}
+          onChange={handleChange}
+        />
       </div>
 
-    
-
-      {/* Voice Note */}
-      <div>
-        <Label>Voice Note (optional)</Label>
-        <Button variant="outline" className="w-full">
-          🎤 Start Recording
-        </Button>
-      </div>
-
-      {/* Lot ID */}
-      <div>
-        <Label>Lot ID (Auto-generated)</Label>
-        <Input disabled placeholder="Auto-generated" />
-      </div>
+      {/* MESSAGE */}
+      {message && (
+        <p className="text-center text-sm text-blue-600">{message}</p>
+      )}
 
       {/* Submit */}
-      <Button className="w-full bg-black text-white">
-        Confirm Arrival
+      <Button
+        onClick={handleSubmit}
+        disabled={loading}
+        className="w-full bg-black text-white"
+      >
+        {loading ? "Loading..." : "Confirm Arrival"}
       </Button>
 
     </div>

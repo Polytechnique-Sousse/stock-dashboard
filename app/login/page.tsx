@@ -13,10 +13,10 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Ici tu mets ton username et mot de passe
+
     if (username === "roua" && password === "1234") {
       localStorage.setItem("loggedIn", "true"); // Sauvegarde session simple
-      router.push("/dashboard"); // Redirection vers dashboard
+      router.push("/welcome"); // Redirection vers welcome
     } else {
       setError("Nom d'utilisateur ou mot de passe incorrect");
     }
@@ -33,7 +33,7 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <h1 className="text-lg  text-center">Welcome Back </h1>
+          
           <h1 className="text-2xl font-bold text-center">Login</h1>
         </div>
         {error && <p className="text-red-500 text-sm">{error}</p>}

@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -24,6 +25,7 @@ model Product {
   id        Int        @id @default(autoincrement())
   name      String
   category  String
+  description String?
   price     Float
   stock     Int        @default(0)
   threshold Int        @default(5)
@@ -31,20 +33,18 @@ model Product {
   updatedAt DateTime   @updatedAt
   inbounds  Inbound[]
   outbounds Outbound[]
+  movements   StockMovement[]
+
 }
 
 model Supplier {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   name      String
-  phone     String
-  email     String   @unique
-  address   String
-  products  String
-  leadTime  Int      @default(7)
+  email     String?
+  phone     String?
+  address   String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
-
 model Inbound {
   id        Int      @id @default(autoincrement())
   quantity  Int
@@ -66,6 +66,14 @@ model Outbound {
   productId Int
   product   Product        @relation(fields: [productId], references: [id])
   createdAt DateTime       @default(now())
+}
+model StockMovement {
+  id        Int      @id @default(autoincrement())
+  type      String   // "IN" ou "OUT"
+  quantity  Int
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
 }
 
 enum OutboundStatus {
