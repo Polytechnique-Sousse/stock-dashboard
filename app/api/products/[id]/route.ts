@@ -1,22 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const productId = Number(params.id);
+    const { id } = await params;
 
-    console.log("PARAMS =", params.id);
+    console.log("DELETE ID =", id);
 
-    if (isNaN(productId)) {
+    const productId = Number(id);
+
+    if (!productId || isNaN(productId)) {
       return NextResponse.json(
-        { error: "ID invalid", raw: params.id },
+        { error: "Invalid product ID" },
         { status: 400 }
       );
     }
 
+    
     const product = await prisma.product.findUnique({
       where: { id: productId },
     });
@@ -28,35 +31,21 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(product);
+    // 🗑 DELETE
+    await prisma.product.delete({
+      where: { id: productId },
+    });
+
+    return NextResponse.json({
+      message: "Product deleted successfully",
+    });
 
   } catch (error) {
-    console.error(error);
+    console.error("DELETE ERROR:", error);
 
     return NextResponse.json(
-      { error: "Server error" },
+      { error: "Server error", details: String(error) },
       { status: 500 }
     );
-  }
-}
-export async function PUT(req: Request, { params }: any) {
-  const data = await req.json();
-
-  const product = await prisma.product.update({
-    where: { id: Number(params.id) },
-    data,
-  });
-
-  return NextResponse.json(product);
-}
-export async function DELETE(
-  _: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    await prisma.supplier.delete({ where: { id: Number(params.id) } });
-    return NextResponse.json({ message: "Supplier deleted" });
-  } catch {
-    return NextResponse.json({ error: "Supplier not found" }, { status: 404 });
   }
 }

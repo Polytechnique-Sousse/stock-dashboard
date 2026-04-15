@@ -29,7 +29,7 @@ export default function LoginPage() {
         className="bg-white p-8 rounded-xl shadow-md min-w-md flex flex-col gap-4"
       >
         <div className="flex justify-center items-center">
-          <img src="/logo-visioad.png" className="w-20 h-20 " />
+          <img src="/logo-du-visioad.png" className="w-50 h-20 " />
         </div>
 
         <div>

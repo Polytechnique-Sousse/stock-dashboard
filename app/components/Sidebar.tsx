@@ -1,26 +1,47 @@
 "use client";
-import { LayoutDashboard, Settings, User, Package, TrendingUp, TrendingDown, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+
+import React from "react";
+import {
+  LayoutDashboard,
+  Settings,
+  User,
+  Package,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  LogOut,
+} from "lucide-react";
+
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem("loggedIn");
+    router.replace("/login");
+  };
 
   const links = [
-    { href: "/dashboard",           icon: LayoutDashboard, label: "Dashboard"  },
-    { href: "/dashboard/products",  icon: Package,         label: "Products"   },
-    { href: "/dashboard/suppliers", icon: User,            label: "Suppliers"  },
-    { href: "/dashboard/inbound",   icon: ArrowDownCircle, label: "Inbound"    },
-    { href: "/dashboard/outbound",  icon: ArrowUpCircle,   label: "Outbound"   },
-    { href: "/dashboard/settings",  icon: Settings,        label: "Settings"   },
+    { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { href: "/dashboard/products", icon: Package, label: "Products" },
+    { href: "/dashboard/suppliers", icon: User, label: "Suppliers" },
+    { href: "/dashboard/inbound", icon: ArrowDownCircle, label: "Inbound" },
+    { href: "/dashboard/outbound", icon: ArrowUpCircle, label: "Outbound" },
+    { href: "/dashboard/settings", icon: Settings, label: "Settings" },
   ];
 
   return (
-    <div className="fixed top-0 left-0 w-64 h-full min-h-screen bg-red-950 text-white p-6 flex flex-col z-50">
+    <div className="fixed top-0 left-0 w-64 h-full bg-red-950 text-white p-6 flex flex-col">
+
+      {/* LOGO */}
       <div className="flex justify-center items-center mb-10">
-        <img src="/logo.svg" />
+        <img src="/logo.svg" alt="logo" />
       </div>
-      <div className="flex flex-col gap-2">
+
+      {/* LINKS */}
+      <div className="flex flex-col gap-2 flex-1">
         {links.map(({ href, icon: Icon, label }) => (
           <Link
             key={href}
@@ -36,6 +57,15 @@ export default function Sidebar() {
           </Link>
         ))}
       </div>
+
+      {/* LOGOUT EN BAS */}
+      <button
+        onClick={handleLogout}
+        className="flex items-center gap-2 p-3 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 transition w-full mt-4"
+      >
+        <LogOut size={18} />
+        Logout
+      </button>
     </div>
   );
 }

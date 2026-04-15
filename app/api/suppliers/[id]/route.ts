@@ -1,26 +1,37 @@
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
 
-// UPDATE
-export async function PUT(req: Request, { params }: any) {
-  const id = Number(params.id);
-  const data = await req.json();
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const supplierId = Number(id);
 
-  const updated = await prisma.supplier.update({
-    where: { id },
-    data,
-  });
+    if (isNaN(supplierId)) {
+      return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+    }
 
-  return NextResponse.json(updated);
-}
+    const body = await req.json();
 
-// DELETE
-export async function DELETE(req: Request, { params }: any) {
-  const id = Number(params.id);
+    const updatedSupplier = await prisma.supplier.update({
+      where: { id: supplierId },
+      data: {
+        name: body.name?.trim(),
+        phone: body.phone ?? "",
+        email: body.email ?? "",
+        address: body.address ?? "",
+      },
+    });
 
-  await prisma.supplier.delete({
-    where: { id },
-  });
+    return NextResponse.json(updatedSupplier);
+  } catch (error) {
+    console.error("UPDATE ERROR:", error);
 
-  return NextResponse.json({ message: "Deleted" });
+    return NextResponse.json(
+      { error: "Update failed", details: String(error) },
+      { status: 500 }
+    );
+  }
 }

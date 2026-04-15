@@ -1,60 +1,46 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { comparePassword, signToken } from "@/lib/auth";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-export async function POST(req: NextRequest) {
+const SECRET = "MY_SECRET_KEY"; // mets ça dans .env après
+
+export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password required" },
-        { status: 400 }
-      );
-    }
 
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "Invalid credentials" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const valid = await comparePassword(password, user.password);
+    const valid = await bcrypt.compare(password, user.password);
 
     if (!valid) {
-      return NextResponse.json(
-        { error: "Invalid credentials" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
 
-    const token = signToken({
-      id: user.id,
-      email: user.email,
-      role: user.role,
+    // 🔐 créer token
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      SECRET,
+      { expiresIn: "1d" }
+    );
+
+    // 🍪 stocker dans cookie
+    const response = NextResponse.json({ message: "Login success" });
+
+    response.cookies.set("token", token, {
+      httpOnly: true,
+      path: "/",
     });
 
-    return NextResponse.json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name ?? "",
-        role: user.role,
-      },
-    });
+    return response;
 
   } catch (error) {
-    console.error("LOGIN ERROR:", error);
-
-    return NextResponse.json(
-      { error: "Server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Login error" }, { status: 500 });
   }
 }
