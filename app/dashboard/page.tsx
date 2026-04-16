@@ -92,7 +92,7 @@ export default function DashboardPage() {
 
     fetchStats();
 
-    // Rafraîchissement automatique toutes les 30s
+    
     const interval = setInterval(fetchStats, 30_000);
     return () => clearInterval(interval);
   }, []);

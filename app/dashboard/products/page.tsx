@@ -39,35 +39,37 @@ type Product = {
   id: number;
   name: string;
   stock: number;
-  price: string;
+  price: string | number;
   category: string;
   threshold: number;
 };
 
 const categories = ["Poultry", "Red Meat", "Seafood", "Charcuterie", "Other"];
-const emptyForm  = { name: "", stock: "", price: "", category: "", threshold: "5" };
+const emptyForm = { name: "", stock: "", price: "", category: "", threshold: "5" };
 
 export default function ProductsPage() {
-  const [products, setProducts]       = useState<Product[]>([]);
-  const [search, setSearch]           = useState("");
-  const [openDialog, setOpenDialog]   = useState(false);
-  const [openDelete, setOpenDelete]   = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [search, setSearch] = useState("");
+  const [openDialog, setOpenDialog] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
-  const [deleteId, setDeleteId]       = useState<number | null>(null);
-  const [form, setForm]               = useState(emptyForm);
-  const [errors, setErrors]           = useState<Record<string, string>>({});
-  const [loading, setLoading]         = useState(true);
-  const [saving, setSaving]           = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // ── Charger depuis la base de données ──
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res  = await fetch("/api/products");
+      const res = await fetch("/api/products");
       const data = await res.json();
+      console.log("✅ Produits chargés:", data);
       setProducts(data);
-    } catch {
-      console.error("Failed to fetch products");
+    } catch (error) {
+      console.error("❌ Erreur lors du chargement des produits:", error);
+      alert("Erreur lors du chargement des produits");
     } finally {
       setLoading(false);
     }
@@ -77,12 +79,13 @@ export default function ProductsPage() {
     fetchProducts();
   }, []);
 
-  const filtered   = products.filter((p) =>
+  const filtered = products.filter((p) =>
     (p.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
     (p.category ?? "").toLowerCase().includes(search.toLowerCase())
   );
+
   const totalStock = products.reduce((a, b) => a + (b.stock ?? 0), 0);
-  const lowStock   = products.filter((p) => (p.stock ?? 0) <= (p.threshold ?? 5)).length;
+  const lowStock = products.filter((p) => (p.stock ?? 0) <= (p.threshold ?? 5)).length;
 
   const handleAdd = () => {
     setEditProduct(null);
@@ -94,10 +97,10 @@ export default function ProductsPage() {
   const handleEdit = (p: Product) => {
     setEditProduct(p);
     setForm({
-      name:      p.name      ?? "",
-      stock:     String(p.stock ?? 0),
-      price:     p.price     ?? "",
-      category:  p.category  ?? "",
+      name: p.name ?? "",
+      stock: String(p.stock ?? 0),
+      price: String(p.price ?? ""),
+      category: p.category ?? "",
       threshold: String(p.threshold ?? 5),
     });
     setErrors({});
@@ -105,59 +108,112 @@ export default function ProductsPage() {
   };
 
   const handleDeleteConfirm = (id: number) => {
+    console.log("🗑️ Confirmation suppression pour ID:", id);
     setDeleteId(id);
     setOpenDelete(true);
   };
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!form.name.trim())                        e.name     = "Name is required";
-    if (!form.price.trim())                       e.price    = "Price is required";
-    if (!form.category)                           e.category = "Category is required";
-    if (!form.stock || isNaN(Number(form.stock))) e.stock    = "Invalid stock value";
+    if (!form.name.trim()) e.name = "Name is required";
+    if (!form.price.trim()) e.price = "Price is required";
+    if (!form.category) e.category = "Category is required";
+    if (!form.stock || isNaN(Number(form.stock))) e.stock = "Invalid stock value";
     return e;
   };
 
   // ── Save → enregistre dans la base ──
   const handleSave = async () => {
     const e = validate();
-    if (Object.keys(e).length > 0) { setErrors(e); return; }
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      return;
+    }
 
     setSaving(true);
     try {
       if (editProduct) {
         // PUT — modifier dans la base
-        const res = await fetch(`/api/products/${editProduct.id}`, {
-          method:  "PUT",
+        const url = `/api/products/${editProduct.id}`;
+        console.log("💾 Modification - URL:", url);
+        console.log("💾 Modification - ID:", editProduct.id);
+        console.log("💾 Données à envoyer:", {
+          name: form.name,
+          category: form.category,
+          price: Number(form.price) || 0,
+          stock: Number(form.stock) || 0,
+          threshold: Number(form.threshold) || 5,
+        });
+
+        const res = await fetch(url, {
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name:      form.name,
-            category:  form.category,
-            price:     Number(form.price.replace(" TND", "")),
-            stock:     Number(form.stock),
-            threshold: Number(form.threshold ?? 5),
+            name: form.name,
+            category: form.category,
+            price: Number(form.price) || 0,
+            stock: Number(form.stock) || 0,
+            threshold: Number(form.threshold) || 5,
           }),
         });
-        if (!res.ok) throw new Error("Failed to update");
+
+        console.log("📊 Status HTTP (PUT):", res.status);
+        const responseData = await res.json();
+        console.log("📝 Réponse serveur (PUT):", responseData);
+
+        if (!res.ok) {
+          throw new Error(responseData.error || responseData.message || "Erreur lors de la modification");
+        }
+
+        console.log("✅ Produit modifié avec succès");
+        await fetchProducts();
+        setOpenDialog(false);
+        setForm(emptyForm);
+        setEditProduct(null);
       } else {
         // POST — ajouter dans la base
+        console.log("➕ Ajout nouveau produit");
+        console.log("➕ Données à envoyer:", {
+          name: form.name,
+          category: form.category,
+          price: Number(form.price) || 0,
+          stock: Number(form.stock) || 0,
+          threshold: Number(form.threshold) || 5,
+        });
+
         const res = await fetch("/api/products", {
-          method:  "POST",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name:      form.name,
-            category:  form.category,
-            price:     Number(form.price.replace(" TND", "")),
-            stock:     Number(form.stock),
-            threshold: Number(form.threshold ?? 5),
+            name: form.name,
+            category: form.category,
+            price: Number(form.price) || 0,
+            stock: Number(form.stock) || 0,
+            threshold: Number(form.threshold) || 5,
           }),
         });
-        if (!res.ok) throw new Error("Failed to create");
+
+        console.log("📊 Status HTTP (POST):", res.status);
+        const responseData = await res.json();
+        console.log("📝 Réponse serveur (POST):", responseData);
+
+        if (!res.ok) {
+          throw new Error(responseData.error || responseData.message || "Erreur lors de la création");
+        }
+
+        console.log("✅ Produit créé avec succès");
+        await fetchProducts();
+        setOpenDialog(false);
+        setForm(emptyForm);
       }
-      await fetchProducts();
-      setOpenDialog(false);
-    } catch {
-      console.error("Failed to save product");
+    } catch (error) {
+      console.error("❌ Erreur sauvegarde complète:", error);
+      if (error instanceof Error) {
+        setErrors({ submit: error.message });
+        alert(`Erreur: ${error.message}`);
+      } else {
+        alert("Une erreur inconnue s'est produite");
+      }
     } finally {
       setSaving(false);
     }
@@ -165,13 +221,46 @@ export default function ProductsPage() {
 
   // ── Delete → supprime définitivement de la base ──
   const handleDelete = async () => {
+    if (!deleteId) {
+      console.error("❌ deleteId est null ou undefined");
+      alert("Erreur : ID produit manquant");
+      setOpenDelete(false);
+      return;
+    }
+
     try {
-      const res = await fetch(`/api/products/${deleteId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
+      const url = `/api/products/${deleteId}`;
+      console.log("🗑️ Suppression - URL:", url);
+      console.log("🗑️ Suppression - deleteId:", deleteId);
+
+      const res = await fetch(url, {
+        method: "DELETE",
+      });
+
+      console.log("📊 Status HTTP (DELETE):", res.status);
+
+      // Toujours lire la réponse
+      const responseData = await res.json();
+      console.log("📝 Réponse serveur (DELETE):", responseData);
+
+      if (!res.ok) {
+        const errorMsg = responseData.error || responseData.details || "Erreur inconnue";
+        throw new Error(`HTTP ${res.status}: ${errorMsg}`);
+      }
+
+      console.log("✅ Produit supprimé avec succès");
       await fetchProducts();
-    } catch {
-      console.error("Failed to delete product");
-    } finally {
+      setOpenDelete(false);
+      setDeleteId(null);
+    } catch (error) {
+      console.error("❌ Erreur DELETE complète:", error);
+
+      if (error instanceof Error) {
+        alert(`Erreur de suppression: ${error.message}`);
+        console.error("Stack trace:", error.stack);
+      } else {
+        alert("Une erreur inconnue s'est produite");
+      }
       setOpenDelete(false);
     }
   };
@@ -179,7 +268,6 @@ export default function ProductsPage() {
   return (
     <PrivateRoute>
       <div className="min-h-screen bg-gray-50 p-6">
-
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -195,11 +283,11 @@ export default function ProductsPage() {
         </div>
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-3 sm:grid-cols-3 gap-4 mb-6">
           {[
-            { label: "Total Products", value: products.length, icon: Package,       color: "bg-blue-500"  },
-            { label: "Total Stock",    value: totalStock,       icon: CheckCircle,   color: "bg-green-500" },
-            { label: "Low Stock",      value: lowStock,         icon: AlertTriangle, color: "bg-red-500"   },
+            { label: "Total Products", value: products.length, icon: Package, color: "bg-blue-500" },
+            { label: "Total Stock", value: totalStock, icon: CheckCircle, color: "bg-green-500" },
+            { label: "Low Stock", value: lowStock, icon: AlertTriangle, color: "bg-red-500" },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
               <div className={`${color} p-3 rounded-xl`}>
@@ -215,7 +303,6 @@ export default function ProductsPage() {
 
         {/* Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-
           <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2 mb-5 w-72">
             <Search size={14} className="text-gray-400" />
             <input
@@ -309,9 +396,10 @@ export default function ProductsPage() {
             </DialogHeader>
 
             <div className="flex flex-col gap-4 py-2">
-
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="name" className="text-sm text-gray-600">Product Name</Label>
+                <Label htmlFor="name" className="text-sm text-gray-600">
+                  Product Name
+                </Label>
                 <Input
                   id="name"
                   placeholder="e.g. Whole Chicken, Ground Beef..."
@@ -333,7 +421,9 @@ export default function ProductsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -342,7 +432,9 @@ export default function ProductsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="price" className="text-sm text-gray-600">Price (TND)</Label>
+                  <Label htmlFor="price" className="text-sm text-gray-600">
+                    Price (TND)
+                  </Label>
                   <Input
                     id="price"
                     placeholder="e.g. 12.500"
@@ -353,7 +445,9 @@ export default function ProductsPage() {
                   {errors.price && <p className="text-xs text-red-500">{errors.price}</p>}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="stock" className="text-sm text-gray-600">Stock</Label>
+                  <Label htmlFor="stock" className="text-sm text-gray-600">
+                    Stock
+                  </Label>
                   <Input
                     id="stock"
                     type="number"
@@ -367,7 +461,9 @@ export default function ProductsPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="threshold" className="text-sm text-gray-600">Low Stock Threshold</Label>
+                <Label htmlFor="threshold" className="text-sm text-gray-600">
+                  Low Stock Threshold
+                </Label>
                 <Input
                   id="threshold"
                   type="number"
@@ -377,10 +473,19 @@ export default function ProductsPage() {
                 />
               </div>
 
+              {errors.submit && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{errors.submit}</p>}
             </div>
 
             <DialogFooter className="gap-2 mt-2">
-              <Button variant="outline" onClick={() => setOpenDialog(false)} className="rounded-xl">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setOpenDialog(false);
+                  setErrors({});
+                  setForm(emptyForm);
+                }}
+                className="rounded-xl"
+              >
                 Cancel
               </Button>
               <Button
@@ -415,7 +520,6 @@ export default function ProductsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-
       </div>
     </PrivateRoute>
   );

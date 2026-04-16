@@ -8,16 +8,18 @@ const JWT_SECRET = process.env.JWT_SECRET ?? "visio-secret-key";
 
 // 🔐 récupérer utilisateur depuis JWT
 async function getCurrentUser() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
+  const cookieStore = cookies();
+  const token = (await cookieStore).get("token")?.value;
 
   if (!token) return null;
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as {
-      id?: number;
-      email?: string;
-    };
+    const payload = jwt.verify(token, JWT_SECRET) as any;
+
+return {
+  id: payload.id ? Number(payload.id) : undefined,
+  email: payload.email,
+};
 
     return payload;
   } catch {
@@ -31,9 +33,9 @@ async function getCurrentUser() {
 export async function GET() {
   const user = await getCurrentUser();
 
-  if (!user?.id && !user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!user) {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+}
 
   try {
     // récupérer user
