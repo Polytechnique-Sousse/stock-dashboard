@@ -12,8 +12,7 @@ export async function POST(req: Request) {
 
     if (!productId || !quantity) {
       return NextResponse.json(
-        { error: "productId and quantity required" },
-        { status: 400 }
+        { error: "productId and quantity required" }
       );
     }
 
@@ -23,15 +22,13 @@ export async function POST(req: Request) {
 
     if (!product) {
       return NextResponse.json(
-        { error: "Product not found" },
-        { status: 404 }
+        { error: "Product not found" }
       );
     }
 
     if (product.stock < quantity) {
       return NextResponse.json(
-        { error: "Stock insuffisant" },
-        { status: 400 }
+        { error: "Stock insuffisant" }
       );
     }
 
@@ -40,7 +37,7 @@ export async function POST(req: Request) {
         productId,
         quantity,
         client: body.client || "",
-        amount: body.amount || 0,
+        amount: Number(body.amount),
       },
     });
 
@@ -62,8 +59,18 @@ export async function POST(req: Request) {
     console.error("OUTBOUND ERROR =", error);
 
     return NextResponse.json(
-      { error: "Server error" },
-      { status: 500 }
+      { error: "Server error" }
     );
+  }
+}
+export async function GET() {
+  try {
+    const outbound = await prisma.outbound.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
+    return Response.json(outbound);
+  } catch (error) {
+    return Response.json({ error: "Failed to fetch outbound" }, { status: 500 });
   }
 }

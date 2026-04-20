@@ -303,7 +303,7 @@ export default function ProductsPage() {
 
         {/* Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-          <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2 mb-5 w-72">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-4 py-2 mb-8 w-64">
             <Search size={14} className="text-gray-400" />
             <input
               type="text"

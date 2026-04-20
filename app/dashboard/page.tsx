@@ -54,6 +54,9 @@ interface DashboardData {
   chartLabels:    string[];
   chartValues:    number[];
   stockItems:     StockItem[];
+  inbound: any[];
+  outbound: any[];
+  logout: () => void;
 }
 
 // ── Status styles ─────────────────────────────────────────────────────────────
@@ -268,48 +271,102 @@ export default function DashboardPage() {
                 )
             }
           </div>
+          
         </div>
 
         {/* ── Recent Orders + Stock ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Recent Orders */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">Recent Orders</h2>
-            {loading
-              ? <Skeleton className="h-48" />
-              : data?.recentOrders?.length === 0
-                ? <p className="text-sm text-gray-400 text-center py-8">No orders yet</p>
-                : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-left text-xs text-gray-400 uppercase border-b border-gray-100">
-                          <th className="pb-3 pr-3">ID</th>
-                          <th className="pb-3 pr-3">Client</th>
-                          <th className="pb-3 pr-3">Amount</th>
-                          <th className="pb-3">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(data?.recentOrders ?? []).map((order) => (
-                          <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                            <td className="py-3 pr-3 font-mono text-gray-400 text-xs">{order.id}</td>
-                            <td className="py-3 pr-3 font-medium text-gray-700">{order.client}</td>
-                            <td className="py-3 pr-3 font-semibold text-gray-800">{order.amount}</td>
-                            <td className="py-3">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyle[order.status] ?? "bg-gray-100 text-gray-600"}`}>
-                                {order.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )
-            }
-          </div>
+  {/* 📥 INBOUND */}
+  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+    <h2 className="text-base font-semibold text-gray-900 mb-4">Inbound</h2>
+
+    {loading ? (
+      <Skeleton className="h-48" />
+    ) : (data?.inbound ?? []).length === 0 ? (
+      <p className="text-sm text-gray-400 text-center py-8">No inbound yet</p>
+    ) : (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs text-gray-400 uppercase border-b border-gray-100">
+              <th className="pb-3 pr-3">ID</th>
+              <th className="pb-3 pr-3">Product</th>
+              <th className="pb-3 pr-3">Qty</th>
+              <th className="pb-3">Date</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {(data?.inbound ?? []).slice(0, 5).map((item: any) => (
+              <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50">
+                <td className="py-3 pr-3 font-mono text-gray-400 text-xs">
+                  #{item.id}
+                </td>
+                <td className="py-3 pr-3 text-gray-700">
+                  {item.product?.name || item.productId}
+                </td>
+                <td className="py-3 pr-3 font-semibold text-gray-800">
+                  {item.quantity}
+                </td>
+                <td className="py-3 text-gray-400 text-xs">
+                  {new Date(item.createdAt).toLocaleDateString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+
+  {/* 📤 OUTBOUND */}
+  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+    <h2 className="text-base font-semibold text-gray-900 mb-4">Outbound</h2>
+
+    {loading ? (
+      <Skeleton className="h-48" />
+    ) : (data?.outbound ?? []).length === 0 ? (
+      <p className="text-sm text-gray-400 text-center py-8">No outbound yet</p>
+    ) : (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs text-gray-400 uppercase border-b border-gray-100">
+              <th className="pb-3 pr-3">ID</th>
+              <th className="pb-3 pr-3">Product</th>
+              <th className="pb-3 pr-3">Qty</th>
+              <th className="pb-3">Client</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {(data?.outbound ?? []).slice(0, 5).map((item: any) => (
+              <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50">
+                <td className="py-3 pr-3 font-mono text-gray-400 text-xs">
+                  #{item.id}
+                </td>
+                <td className="py-3 pr-3 text-gray-700">
+                  {item.product?.name || item.productId}
+                </td>
+                <td className="py-3 pr-3 font-semibold text-gray-800">
+                  {item.quantity}
+                </td>
+                <td className="py-3 text-gray-400 text-xs">
+                  {item.client || "-"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+
+</div>
+
+          
 
           {/* Stock */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">

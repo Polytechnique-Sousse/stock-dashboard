@@ -93,6 +93,18 @@ export async function GET() {
       amount: `${((o.quantity ?? 0) * (o.product?.price ?? 0)).toFixed(3)} TND`,
       status: o.status ?? "Processing",
     }));
+    const inbound = await prisma.inbound.findMany({
+  orderBy: { createdAt: "desc" },
+  include: {
+    product: true,
+  },
+});
+const outbound = await prisma.outbound.findMany({
+  orderBy: { createdAt: "desc" },
+  include: {
+    product: true,
+  },
+});
 
     // ── Réponse finale ───────────────────────────────────────
     return NextResponse.json({
@@ -111,6 +123,8 @@ export async function GET() {
         stock:     p.stock,
         threshold: p.threshold ?? 5,
       })),
+      inbound,
+      outbound,
     });
   } catch (error) {
     console.error("[STATS ERROR]", error);

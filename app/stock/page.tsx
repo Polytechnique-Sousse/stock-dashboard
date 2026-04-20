@@ -4,11 +4,11 @@ import PrivateRoute from "../components/PrivateRoute";
 
 export default function StockPage() {
   const stockData = [
-    { Nom: "Clavier", Stock: 25 },
-    { Nom: "Souris", Stock: 40 },
-    { Nom: "Écran", Stock: 12 },
-    { Nom: "Casque", Stock: 3 },
-    { Nom: "Laptop", Stock: 5 },
+    { Nom: "Produit 1", Stock: 25 },
+    { Nom: "Produit 2", Stock: 40 },
+    { Nom: "Produit 3", Stock: 12 },
+    { Nom: "Produit 4", Stock: 3 },
+    { Nom: "Produit 5", Stock: 5 },
   ];
 
   return (

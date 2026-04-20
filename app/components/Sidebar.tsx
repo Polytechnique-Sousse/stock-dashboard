@@ -60,12 +60,12 @@ export default function Sidebar() {
 
       {/* LOGOUT EN BAS */}
       <button
-        onClick={handleLogout}
-        className="flex items-center gap-2 p-3 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 transition w-full mt-4"
-      >
-        <LogOut size={18} />
-        Logout
-      </button>
+  onClick={handleLogout}
+  className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-white/70 hover:text-white hover:bg-white/10 w-full mt-4"
+>
+  <LogOut size={20} />
+  Logout
+</button>
     </div>
   );
 }

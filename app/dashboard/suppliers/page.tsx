@@ -78,64 +78,48 @@ export default function SuppliersPage() {
 
   // ── Add ou Edit → enregistre dans la base ──
   const handleSave = async () => {
-  const e = validate();
-  if (Object.keys(e).length > 0) {
-    setErrors(e);
-    return;
-  }
+    const e = validate();
+    if (Object.keys(e).length > 0) { setErrors(e); return; }
 
-  setSaving(true);
-
-  try {
-    const payload = {
-  name: form.name.trim(),
-  email: form.email,
-  phone: form.phone,
-  address: form.address,
-};
-
-    if (editSupplier) {
-      const res = await fetch(`/api/suppliers/${editSupplier.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-    } else {
-      const res = await fetch("/api/suppliers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+    setSaving(true);
+    try {
+      if (editSupplier) {
+        // PUT — modifier dans la base
+        const res = await fetch(`/api/suppliers/${editSupplier.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!res.ok) throw new Error("Failed to update");
+      } else {
+        // POST — ajouter dans la base
+        const res = await fetch("/api/suppliers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!res.ok) throw new Error("Failed to create");
+      }
+      await fetchSuppliers(); // recharger depuis la base
+      setEditSupplier(null);
+      setForm(emptyForm);
+      setErrors({});
+    } catch {
+      console.error("Failed to save supplier");
+    } finally {
+      setSaving(false);
     }
-
-    await fetchSuppliers();
-    setEditSupplier(null);
-    setForm(emptyForm);
-
-  } catch (err) {
-    console.error("❌ Failed to save supplier:", err);
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
   const handleEdit = (s: Supplier) => {
-  setEditSupplier(s);
-  setForm({
-    name: s.name ?? "",
-    phone: s.phone ?? "",
-    email: s.email ?? "",
-    address: s.address ?? "",
-    products: s.products ?? "",
-  });
-};
+    setEditSupplier(s);
+    setForm({
+      name: s.name, phone: s.phone,
+      email: s.email, address: s.address, products: s.products,
+    });
+    setErrors({});
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleCancel = () => {
     setEditSupplier(null);
@@ -147,20 +131,18 @@ export default function SuppliersPage() {
 
   // ── Supprimer définitivement de la base ──
   const handleDelete = async () => {
-  try {
-    const res = await fetch(`/api/suppliers/${deleteId}`, {
-      method: "DELETE",
-    });
-
-    if (!res.ok) throw new Error("Delete failed");
-
-    await fetchSuppliers();
-  } catch (err) {
-    console.error("Delete error:", err);
-  } finally {
-    setOpenDelete(false);
-  }
-};
+    try {
+      const res = await fetch(`/api/suppliers/${deleteId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      await fetchSuppliers(); // recharger depuis la base
+    } catch {
+      console.error("Failed to delete supplier");
+    } finally {
+      setOpenDelete(false);
+    }
+  };
 
   return (
     <PrivateRoute>
@@ -193,7 +175,7 @@ export default function SuppliersPage() {
 
           {/* Form */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-base font-semibold text-gray-800 mb-5">
+            <h2 className="text-base font-semibold text-gray-800 mb-6">
               {editSupplier ? "✏️ Edit Supplier" : "➕ Add Supplier"}
             </h2>
 

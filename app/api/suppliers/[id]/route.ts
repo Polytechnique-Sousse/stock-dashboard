@@ -1,94 +1,34 @@
-import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
-// ================= UPDATE SUPPLIER =================
+// UPDATE
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: rawId } = await params;
+  const id = Number(rawId);
+  const data = await req.json();
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
+  const updated = await prisma.supplier.update({
+    where: { id },
+    data: {
+      name: data.name,
+      phone: data.phone || null,
+      email: data.email || null,
+      address: data.address || null,
+      products: data.products || null,
+    },
+  });
 
-    const supplierId = Number(id);
-
-    if (isNaN(supplierId)) {
-      return NextResponse.json(
-        { error: "Invalid supplier ID" },
-        { status: 400 }
-      );
-    }
-
-    const body = await req.json();
-
-    const updatedSupplier = await prisma.supplier.update({
-      where: { id: supplierId },
-      data: {
-        name: body.name?.trim(),
-        email: body.email || null,
-        phone: body.phone || null,
-        address: body.address || null,
-        // ❌ products supprimé car n'existe pas dans schema
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: updatedSupplier,
-    });
-
-  } catch (error) {
-    console.error("UPDATE SUPPLIER ERROR:", error);
-
-    return NextResponse.json(
-      { error: "Failed to update supplier", details: String(error) },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(updated);
 }
 
-// ================= DELETE SUPPLIER =================
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    const supplierId = Number(id);
+// DELETE
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: rawId } = await params;
+  const id = Number(rawId);
 
-    if (!supplierId || isNaN(supplierId)) {
-      return NextResponse.json(
-        { error: "Invalid supplier ID" },
-        { status: 400 }
-      );
-    }
+  await prisma.supplier.delete({
+    where: { id },
+  });
 
-    const supplier = await prisma.supplier.findUnique({
-      where: { id: supplierId },
-    });
-
-    if (!supplier) {
-      return NextResponse.json(
-        { error: "Supplier not found" },
-        { status: 404 }
-      );
-    }
-
-    await prisma.supplier.delete({
-      where: { id: supplierId },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "Supplier deleted",
-    });
-
-  } catch (error) {
-    console.error("DELETE SUPPLIER ERROR:", error);
-
-    return NextResponse.json(
-      { error: "Failed to delete supplier" },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({ message: "Deleted" });
 }

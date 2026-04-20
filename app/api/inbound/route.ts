@@ -61,3 +61,20 @@ export async function POST(req: Request) {
     );
   }
 }
+export async function GET() {
+  try {
+    const inbound = await prisma.inbound.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        product: true,
+      },
+    });
+
+    return NextResponse.json(inbound);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to fetch inbound" },
+      { status: 500 }
+    );
+  }
+}

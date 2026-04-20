@@ -7,10 +7,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (auth.error) return auth.error;
 
   try {
-    const { quantity, client, amount, status, note, date } = await req.json();
+    const { quantity, client, amount, note, date } = await req.json();
 
     const old = await prisma.outbound.findUnique({ where: { id: Number(params.id) } });
-    if (!old) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!old) return NextResponse.json({ error: "Not found" });
 
     const diff = old.quantity - Number(quantity); // stock à remettre
 
@@ -21,7 +21,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           quantity: Number(quantity),
           client,
           amount: Number(amount),
-          status,
           note,
           date: date ? new Date(date) : undefined,
         },
@@ -45,7 +44,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
   try {
     const old = await prisma.outbound.findUnique({ where: { id: Number(params.id) } });
-    if (!old) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!old) return NextResponse.json({ error: "Not found" });
 
     await prisma.$transaction([
       prisma.outbound.delete({ where: { id: Number(params.id) } }),
@@ -57,7 +56,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     return NextResponse.json({ message: "Outbound deleted" });
   } catch {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json({ error: "Server error" });
   }
 }
 

@@ -13,10 +13,9 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
 
-
-    if (username === "roua" && password === "1234") {
+    if (username === "roua" && password === "12345678") {
       localStorage.setItem("loggedIn", "true"); // Sauvegarde session simple
-      router.push("/welcome"); // Redirection vers welcome
+      router.push("/dashboard"); // ✅ Redirection vers dashboard
     } else {
       setError("Nom d'utilisateur ou mot de passe incorrect");
     }
@@ -33,7 +32,6 @@ export default function LoginPage() {
         </div>
 
         <div>
-          
           <h1 className="text-2xl font-bold text-center">Login</h1>
         </div>
         {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -52,7 +50,9 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button className="bg-red-900 flex items-center justify-center text-white gap-2 p-2 rounded"> Login <LogIn size={15} /></button>
+        <button className="bg-red-900 flex items-center justify-center text-white gap-2 p-2 rounded">
+          Login <LogIn size={15} />
+        </button>
       </form>
     </div>
   );

@@ -16,72 +16,65 @@ model User {
   createdAt DateTime @default(now())
 }
 
-enum Role {
-  ADMIN
-  USER
-}
-
 model Product {
-  id        Int        @id @default(autoincrement())
-  name      String
-  category  String
+  id          Int             @id @default(autoincrement())
+  name        String
+  category    String
+  price       Float
+  stock       Int             @default(0)
+  threshold   Int             @default(5)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   description String?
-  price     Float
-  stock     Int        @default(0)
-  threshold Int        @default(5)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  inbounds  Inbound[]
-  outbounds Outbound[]
+  inbounds    Inbound[]
+  outbounds   Outbound[]
+  supplierId Int
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
   movements   StockMovement[]
-
 }
 
 model Supplier {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   name      String
-  email     String?
   phone     String?
+  email     String?
   address   String?
+  products  String? 
   createdAt DateTime @default(now())
+  productsList Product[]
 }
+
+
 model Inbound {
   id        Int      @id @default(autoincrement())
   quantity  Int
   note      String?
   date      DateTime @default(now())
   productId Int
-   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Outbound {
-  id        Int            @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   quantity  Int
   client    String
   amount    Float
-  status    OutboundStatus @default(PENDING)
-  note      String?
-  date      DateTime       @default(now())
+  date      DateTime @default(now())
   productId Int
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  createdAt DateTime       @default(now())
-}
-model StockMovement {
-  id        Int      @id @default(autoincrement())
-  type      String   // "IN" ou "OUT"
-  quantity  Int
-  productId Int
-  product   Product  @relation(fields: [productId], references: [id])
   createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
-enum OutboundStatus {
-  PENDING
-  PROCESSING
-  DELIVERED
-  CANCELLED
+model StockMovement {
+  id        Int      @id @default(autoincrement())
+  type      String
+  quantity  Int
+  productId Int
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
 }
+
 model Settings {
   id          Int     @id @default(autoincrement())
   companyName String?
@@ -89,4 +82,16 @@ model Settings {
   unit        String  @default("kg")
   lowStock    Boolean @default(false)
   emailNotif  Boolean @default(false)
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum OutboundStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  CANCELLED
 }
